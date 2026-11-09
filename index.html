@@ -13,6 +13,8 @@
     --text-secondary: #52514e;
     --text-muted: #898781;
     --border: rgba(11,11,11,0.10);
+    --t-adm: #1D8355; --t-per: #2C68AA; --t-dem: #B9531A;
+    --t-ret: #7448AE; --t-mud: #9C7A0E; --t-out: #6A7A82; --t-nao: #A3AFB5;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -23,6 +25,8 @@
       --text-secondary: #c3c2b7;
       --text-muted: #898781;
       --border: rgba(255,255,255,0.10);
+      --t-adm: #4CC48A; --t-per: #6FA8EA; --t-dem: #F08A4F;
+      --t-ret: #B38BEF; --t-mud: #D9B544; --t-out: #8C9DA5; --t-nao: #5C6B72;
     }
   }
   * { box-sizing: border-box; }
@@ -52,6 +56,8 @@
   .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; font-size: 13px; color: var(--text-secondary); }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #0ca30c; display: inline-block; }
   .status-right { display: flex; align-items: center; gap: 6px; }
+  .tipo-nota { font-size: 12px; color: var(--text-muted); margin: -1rem 0 1.5rem; }
+  .swatch.claro { opacity: .4; }
 </style>
 </head>
 <body>
@@ -84,10 +90,15 @@
     <canvas id="chartContatos" role="img" aria-label="Gráfico de barras empilhadas mostrando contatos atendidos pela Sofia versus em atendimento manual por dia">Volume diário de contatos, com e sem intervenção manual.</canvas>
   </div>
 
-  <div class="section-label">Agendamentos por serviço (últimos 14 dias)</div>
-  <div class="chart-wrap">
-    <canvas id="chartAgendamentos" role="img" aria-label="Gráfico de barras de agendamentos por serviço nos últimos 14 dias">Total de agendamentos por tipo de serviço.</canvas>
+  <div class="section-label">Agendamentos por tipo de exame</div>
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--text-secondary);"></span>Últimos 14 dias, até hoje</span>
+    <span><span class="swatch claro" style="background:var(--text-secondary);"></span>Já marcados daqui para frente</span>
   </div>
+  <div class="chart-wrap" id="wrapTipos">
+    <canvas id="chartAgendamentos" role="img" aria-label="Gráfico de barras com o total de agendamentos por tipo de exame, separando os últimos 14 dias dos já marcados para frente">Total de agendamentos por tipo de exame.</canvas>
+  </div>
+  <p class="tipo-nota" id="nota-tipos"></p>
 
   <div id="erros-list"></div>
 </div>
@@ -120,7 +131,7 @@ async function loadDashboard() {
     const [resumo, contatos, agendamentos, erros] = await Promise.all([
       sb('dashboard_resumo?select=*'),
       sb('dashboard_contatos?select=*&order=dia.asc'),
-      sb('dashboard_agendamentos?select=*&order=dia.asc'),
+      sb('dashboard_agendamentos_tipo?select=*&order=dia.asc'),
       sb('erros_sistema?select=*&order=created_at.desc&limit=5')
     ]);
 
@@ -156,39 +167,56 @@ async function loadDashboard() {
       }
     });
 
-    const porServico = {};
-    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    // Agrupado por tipo de exame (o banco já junta "Periódico", "Exame periódico", "ASO Periódico"...)
+    const css = getComputedStyle(document.documentElement);
+    const cor = v => css.getPropertyValue(v).trim();
+    const TIPOS = [
+      ['Admissional', '--t-adm'], ['Periódico', '--t-per'], ['Demissional', '--t-dem'],
+      ['Retorno ao trabalho', '--t-ret'], ['Mudança de função', '--t-mud'],
+      ['Outros', '--t-out'], ['Não informado', '--t-nao']
+    ];
+    const hojeSP = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+    const [ha, hm, hd] = hojeSP.split('-').map(Number);
+    const inicio = new Date(Date.UTC(ha, hm - 1, hd - 14)).toISOString().slice(0, 10);
+    const passado = {}, futuro = {};
     agendamentos.forEach(a => {
-      if (new Date(a.dia).getTime() >= cutoff) {
-        const key = a.servico || 'Não informado';
-        porServico[key] = (porServico[key] || 0) + Number(a.total || 0);
-      }
+      const dia = String(a.dia).slice(0, 10);
+      if (dia < inicio) return;
+      const alvo = dia <= hojeSP ? passado : futuro;
+      alvo[a.tipo] = (alvo[a.tipo] || 0) + Number(a.total || 0);
     });
-    const servLabelsFull = Object.keys(porServico);
-    const servData = Object.values(porServico);
-    const palette = ['#2a78d6','#1baf7a','#eda100','#008300','#4a3aa7','#e34948','#e87ba4','#eb6834'];
+    const linhas = TIPOS
+      .map(([nome, v]) => ({ nome, cor: cor(v), p: passado[nome] || 0, f: futuro[nome] || 0 }))
+      .filter(x => x.p + x.f > 0)
+      .sort((a, b) => (a.nome === 'Não informado') - (b.nome === 'Não informado') || (b.p + b.f) - (a.p + a.f));
 
-    function truncateLabel(str, max) {
-      return str.length > max ? str.slice(0, max - 1) + '…' : str;
-    }
-    const servLabels = servLabelsFull.map(l => truncateLabel(l, 18));
+    document.getElementById('wrapTipos').style.height = Math.max(120, linhas.length * 38 + 30) + 'px';
+    const naoInf = linhas.find(x => x.nome === 'Não informado');
+    document.getElementById('nota-tipos').textContent = naoInf
+      ? `"Não informado" são agendamentos sem a linha "Serviço:" na descrição do evento no Calendar.` : '';
 
     if (chartAgendamentos) chartAgendamentos.destroy();
     chartAgendamentos = new Chart(document.getElementById('chartAgendamentos'), {
       type: 'bar',
       data: {
-        labels: servLabels,
-        datasets: [{ data: servData, backgroundColor: servLabelsFull.map((_, i) => palette[i % palette.length]), borderRadius: 4 }]
+        labels: linhas.map(x => x.nome),
+        datasets: [
+          { label: 'Últimos 14 dias', data: linhas.map(x => x.p), backgroundColor: linhas.map(x => x.cor), borderRadius: 3, stack: 't' },
+          { label: 'Já marcados para frente', data: linhas.map(x => x.f), backgroundColor: linhas.map(x => x.cor + '66'), borderRadius: 3, stack: 't' }
+        ]
       },
       options: {
+        indexAxis: 'y',
         responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { title: (items) => servLabelsFull[items[0].dataIndex] } }
+          tooltip: { callbacks: { footer: (items) => {
+            const x = linhas[items[0].dataIndex]; return `Total: ${x.p + x.f}`;
+          } } }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 10 } } },
-          y: { beginAtZero: true, ticks: { precision: 0 } }
+          x: { stacked: true, beginAtZero: true, ticks: { precision: 0 }, grid: { color: cor('--border') } },
+          y: { stacked: true, grid: { display: false }, ticks: { font: { size: 13 } } }
         }
       }
     });

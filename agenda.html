@@ -1,179 +1,446 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agenda - Clínica Prevenyr</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda da recepção</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ── Tokens ─────────────────────────────────────────── */
   :root {
-    --surface-0: #f7f6f2;
-    --surface-1: #ffffff;
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted: #898781;
-    --border: rgba(11,11,11,0.10);
-    --accent: #2a78d6;
+    --paper:   #EEF3F2;
+    --surface: #FFFFFF;
+    --ink:     #14232B;
+    --muted:   #5B6E77;
+    --rule:    #D3DEDC;
+    --brand:   #0E6E6A;
+    --agora:   #D9473A;
+
+    --t-adm: #1D8355;   /* Admissional */
+    --t-per: #2C68AA;   /* Periódico */
+    --t-dem: #B9531A;   /* Demissional */
+    --t-ret: #7448AE;   /* Retorno */
+    --t-mud: #9C7A0E;   /* Mudança de função / risco */
+    --t-out: #6A7A82;   /* Outros / não informado */
+
+    --display: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+    --body: "Atkinson Hyperlegible", system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --surface-0: #121211;
-      --surface-1: #1e1e1c;
-      --text-primary: #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted: #898781;
-      --border: rgba(255,255,255,0.10);
+      --paper:   #0D161B;
+      --surface: #15222A;
+      --ink:     #E4EDEF;
+      --muted:   #93A6AE;
+      --rule:    #263741;
+      --brand:   #4FC2B9;
+      --agora:   #FF6B5C;
+      --t-adm: #4CC48A;
+      --t-per: #6FA8EA;
+      --t-dem: #F08A4F;
+      --t-ret: #B38BEF;
+      --t-mud: #D9B544;
+      --t-out: #8C9DA5;
     }
   }
+
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    background: var(--surface-0);
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    padding: 2rem 1.5rem;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.45;
   }
-  .wrap { max-width: 640px; margin: 0 auto; }
-  h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
-  .subtitle { font-size: 14px; color: var(--text-secondary); margin: 0 0 1.5rem; }
+  button, select, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 64px; }
+
+  /* ── Barra superior ─────────────────────────────────── */
+  .topo {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .marca { font-weight: 700; color: var(--brand); letter-spacing: .01em; }
+  .controles { display: flex; align-items: center; gap: 8px; }
   select {
-    width: 100%; height: 44px; font-size: 15px; padding: 0 12px;
-    background: var(--surface-1); color: var(--text-primary);
-    border: 0.5px solid var(--border); border-radius: 8px;
-    margin-bottom: 1.5rem; appearance: none;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+    padding: 7px 10px; min-height: 40px;
   }
-  .list { display: flex; flex-direction: column; gap: 8px; }
-  .row {
-    background: var(--surface-1); border: 0.5px solid var(--border);
-    border-radius: 8px; padding: 12px 14px;
-    display: flex; align-items: center; gap: 14px;
+  .btn-sair {
+    background: none; border: 1px solid var(--rule); border-radius: 8px;
+    padding: 7px 12px; min-height: 40px; cursor: pointer; color: var(--muted);
   }
-  .time {
-    font-size: 15px; font-weight: 500; color: var(--accent);
-    min-width: 52px;
+  .btn-sair:hover { color: var(--ink); }
+
+  /* ── Cabeçalho do dia ───────────────────────────────── */
+  .dia { padding: 28px 0 8px; }
+  .dia h1 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(32px, 6vw, 46px); line-height: 1.02; margin: 0;
+    letter-spacing: -.01em;
   }
-  .info { flex: 1; min-width: 0; }
-  .nome { font-size: 15px; font-weight: 500; margin: 0 0 2px; }
-  .servico { font-size: 13px; color: var(--text-secondary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 3rem 0; }
-  #gate {
-    max-width: 320px; margin: 4rem auto; text-align: center;
+  .dia .resumo { margin: 8px 0 0; color: var(--muted); }
+
+  .proximo {
+    margin: 22px 0 6px; padding: 16px 18px;
+    background: var(--surface);
+    border-left: 6px solid var(--agora);
+    border-radius: 0 10px 10px 0;
   }
-  #gate input {
-    width: 100%; height: 44px; font-size: 15px; padding: 0 12px;
-    background: var(--surface-1); color: var(--text-primary);
-    border: 0.5px solid var(--border); border-radius: 8px; margin: 12px 0;
+  .proximo p { margin: 0; }
+  .proximo .quando { font-family: var(--display); font-weight: 600; font-size: 20px; color: var(--agora); }
+  .proximo .quem { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .proximo .oque { color: var(--muted); }
+
+  .feriado {
+    margin: 22px 0; padding: 18px; border-radius: 10px;
+    background: var(--surface); border: 1px dashed var(--rule);
   }
-  #gate button {
-    width: 100%; height: 44px; font-size: 15px; font-weight: 500;
-    background: var(--accent); color: #fff; border: none; border-radius: 8px;
-    cursor: pointer;
+  .feriado strong { display: block; font-size: 20px; }
+
+  /* ── Turnos e linhas ────────────────────────────────── */
+  .turno { margin-top: 30px; }
+  .turno h2 {
+    display: flex; align-items: baseline; gap: 10px;
+    font-family: var(--display); font-weight: 600; font-size: 22px;
+    margin: 0 0 6px; padding-bottom: 6px; border-bottom: 2px solid var(--ink);
   }
-  #gate-error { color: #d03b3b; font-size: 13px; min-height: 18px; margin-top: 4px; }
-  .hidden { display: none; }
+  .turno h2 span { font-family: var(--body); font-weight: 400; font-size: 15px; color: var(--muted); }
+
+  ol.lista { list-style: none; margin: 0; padding: 0; }
+  .linha {
+    display: grid; grid-template-columns: 74px 1fr; gap: 14px;
+    padding: 11px 0; border-bottom: 1px solid var(--rule);
+    align-items: start;
+  }
+  .hora {
+    font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1;
+    font-variant-numeric: tabular-nums; padding-top: 2px;
+  }
+  .corpo { border-left: 4px solid var(--tipo, var(--t-out)); padding-left: 12px; min-width: 0; }
+  .nome { font-weight: 700; font-size: 18px; overflow-wrap: anywhere; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 3px; }
+  .tipo { color: var(--tipo, var(--t-out)); font-weight: 700; font-size: 15px; }
+  .servico { color: var(--muted); font-size: 15px; }
+  .coleta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 14px; color: var(--muted);
+  }
+  .coleta svg { width: 16px; height: 16px; flex: none; }
+  .coleta.alerta { color: var(--agora); font-weight: 700; }
+
+  .linha.passou { opacity: .45; }
+  .linha.passou .hora { text-decoration: line-through; text-decoration-thickness: 2px; }
+  .linha.vez { background: color-mix(in srgb, var(--agora) 8%, transparent); }
+  .linha.vez .hora { color: var(--agora); }
+
+  /* Linha do "agora": o elemento marcante da página */
+  .agora {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    margin: 4px 0; height: 26px;
+  }
+  .agora::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    border-top: 2px solid var(--agora);
+  }
+  .agora span {
+    position: relative; background: var(--agora); color: #fff;
+    font-family: var(--display); font-weight: 700; font-size: 15px;
+    padding: 2px 9px; border-radius: 99px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .agora span { animation: pulso 2.4s ease-in-out infinite; }
+    @keyframes pulso { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--agora) 22%, transparent); } }
+  }
+
+  .vazio, .erro { margin: 32px 0; color: var(--muted); }
+  .erro { color: var(--agora); }
+  .rodape { margin-top: 28px; color: var(--muted); font-size: 14px; }
+
+  /* ── Tela de senha ──────────────────────────────────── */
+  .portao { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .portao form {
+    width: 100%; max-width: 340px; background: var(--surface);
+    padding: 26px; border-radius: 12px; border: 1px solid var(--rule);
+  }
+  .portao h1 { font-family: var(--display); font-size: 30px; margin: 0 0 4px; }
+  .portao p { margin: 0 0 18px; color: var(--muted); }
+  .portao input {
+    width: 100%; padding: 10px 12px; min-height: 44px;
+    border: 1px solid var(--rule); border-radius: 8px; background: var(--paper);
+  }
+  .portao button {
+    width: 100%; margin-top: 12px; min-height: 44px; border: 0; border-radius: 8px;
+    background: var(--brand); color: #fff; font-weight: 700; cursor: pointer;
+  }
+  .portao .msg { color: var(--agora); min-height: 22px; margin: 8px 0 0; font-size: 15px; }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 480px) {
+    body { font-size: 16px; }
+    .linha { grid-template-columns: 60px 1fr; gap: 10px; }
+    .hora { font-size: 22px; }
+    .topo { flex-wrap: wrap; }
+  }
 </style>
 </head>
 <body>
 
-<div id="gate">
-  <h1>Agenda Prevenyr</h1>
-  <p class="subtitle">Acesso restrito à equipe da clínica</p>
-  <input type="password" id="pw" placeholder="Senha de acesso" autocomplete="off">
-  <button onclick="checkPassword()">Entrar</button>
-  <div id="gate-error"></div>
-</div>
+<!-- Tela de senha -->
+<section class="portao" id="portao">
+  <form id="formSenha" autocomplete="off">
+    <h1>Agenda da recepção</h1>
+    <p>Clínica Prevenyr</p>
+    <label for="senha" class="servico">Senha</label>
+    <input id="senha" type="password" inputmode="text" required>
+    <button type="submit">Entrar</button>
+    <p class="msg" id="msgSenha" role="alert"></p>
+  </form>
+</section>
 
-<div class="wrap hidden" id="app">
-  <h1>Agenda Prevenyr</h1>
-  <p class="subtitle">Consulte os agendamentos do dia</p>
+<!-- Agenda -->
+<div class="wrap" id="app" hidden>
+  <header class="topo">
+    <span class="marca">Prevenyr</span>
+    <div class="controles">
+      <label for="seletorDia" class="servico" style="position:absolute;left:-9999px">Dia</label>
+      <select id="seletorDia"></select>
+      <button class="btn-sair" id="btnSair" type="button">Sair</button>
+    </div>
+  </header>
 
-  <select id="day-select" onchange="renderDay()"></select>
+  <section class="dia">
+    <h1 id="titulo">Carregando agenda</h1>
+    <p class="resumo" id="resumo"></p>
+  </section>
 
-  <div class="list" id="list"></div>
+  <div id="destaque"></div>
+  <main id="conteudo" aria-live="polite"></main>
+  <p class="rodape" id="rodape"></p>
 </div>
 
 <script>
-const SENHA = "prevenyr2026";
-
-function checkPassword() {
-  const val = document.getElementById('pw').value;
-  if (val === SENHA) {
-    sessionStorage.setItem('agenda_auth', '1');
-    document.getElementById('gate').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    init();
-  } else {
-    document.getElementById('gate-error').textContent = 'Senha incorreta.';
-  }
-}
-document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
-
-if (sessionStorage.getItem('agenda_auth') === '1') {
-  document.getElementById('gate').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  init();
-}
-
+/* ── Configuração ─────────────────────────────────────── */
+const SENHA = "prevenyr2026";            // troque aqui se quiser outra senha
 const SUPABASE_URL = "https://xhgriafqzqjmqbrmkiwy.supabase.co";
-const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3JpYWZxenFqbXFicm1raXd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MzEzMTQsImV4cCI6MjA3NzUwNzMxNH0.gzbEaT-W4rF1cJ_mFtiK06_sxXtZ6oUZWcPvmaAte3s";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3JpYWZxenFqbXFicm1raXd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MzEzMTQsImV4cCI6MjA3NzUwNzMxNH0.gzbEaT-W4rF1cJ_mFtiK06_sxXtZ6oUZWcPvmaAte3s";
+const ATUALIZA_MS = 30000;
+const FUSO = "America/Sao_Paulo";
 
-let agendamentos = [];
+/* ── Senha (lembrada só nesta aba) ────────────────────── */
+const portao = document.getElementById("portao");
+const app = document.getElementById("app");
 
-async function init() {
+function liberado() {
+  try { return sessionStorage.getItem("agenda_ok") === "1"; } catch (e) { return false; }
+}
+function entrar() {
+  try { sessionStorage.setItem("agenda_ok", "1"); } catch (e) {}
+  portao.hidden = true; app.hidden = false;
+  carregar(); setInterval(carregar, ATUALIZA_MS);
+}
+document.getElementById("formSenha").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const campo = document.getElementById("senha");
+  if (campo.value === SENHA) { entrar(); }
+  else {
+    document.getElementById("msgSenha").textContent = "Senha incorreta. Tente de novo.";
+    campo.select();
+  }
+});
+document.getElementById("btnSair").addEventListener("click", () => {
+  try { sessionStorage.removeItem("agenda_ok"); } catch (e) {}
+  location.reload();
+});
+
+/* ── Datas: sempre no horário de Brasília ─────────────── */
+function agoraBrasil() {
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(new Date()).reduce((o, x) => (o[x.type] = x.value, o), {});
+  return { dia: `${p.year}-${p.month}-${p.day}`, min: (+p.hour) * 60 + (+p.minute), hhmm: `${p.hour}:${p.minute}` };
+}
+// O banco guarda a hora local sem fuso (ex: "2026-11-09T08:20:00"): lemos o texto direto.
+function partes(ts) {
+  const [d, t] = String(ts).replace(" ", "T").split("T");
+  const [h, m] = (t || "00:00").split(":").map(Number);
+  return { dia: d, min: h * 60 + m, hhmm: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}` };
+}
+const DIAS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+function nomeDoDia(iso, curto) {
+  const [a, m, d] = iso.split("-").map(Number);
+  const sem = DIAS[new Date(Date.UTC(a, m - 1, d)).getUTCDay()];
+  const semCap = sem.charAt(0).toUpperCase() + sem.slice(1);
+  if (curto) return `${semCap}, ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`;
+  return `${semCap}, ${d} de ${MESES[m - 1]}`;
+}
+
+/* ── Tipo de exame e coleta ───────────────────────────── */
+function semAcento(s) { return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+function tipoDe(servico) {
+  const s = semAcento(servico);
+  if (!s.trim()) return { rotulo: "Serviço não informado", cor: "var(--t-out)" };
+  if (/admiss/.test(s)) return { rotulo: "Admissional", cor: "var(--t-adm)" };
+  if (/demiss/.test(s)) return { rotulo: "Demissional", cor: "var(--t-dem)" };
+  if (/period/.test(s)) return { rotulo: "Periódico", cor: "var(--t-per)" };
+  if (/retorno/.test(s)) return { rotulo: "Retorno ao trabalho", cor: "var(--t-ret)" };
+  if (/mudanca|risco|funcao/.test(s)) return { rotulo: "Mudança de função", cor: "var(--t-mud)" };
+  return { rotulo: null, cor: "var(--t-out)" };
+}
+function temColeta(servico) {
+  return /coprocult|parasitol|fezes|urina|urocult|laborat|sangue oculto|\bppf\b|\bepf\b|\beas\b/.test(semAcento(servico));
+}
+const ICONE_FRASCO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6"/><path d="M10 3v6.5L5.2 17.6A2 2 0 0 0 7 20.6h10a2 2 0 0 0 1.8-3L14 9.5V3"/><path d="M7.5 14h9"/></svg>';
+// Nomes chegam ora em CAIXA ALTA, ora em minúsculas: deixamos todos no mesmo padrão
+const PARTICULAS = new Set(["da", "de", "do", "das", "dos", "e"]);
+function nomeBonito(s) {
+  return String(s || "Paciente").trim().toLowerCase().split(/\s+/)
+    .map((p, i) => i > 0 && PARTICULAS.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
+}
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+/* ── Dados ────────────────────────────────────────────── */
+let registros = [];
+let diaEscolhido = null;
+const seletor = document.getElementById("seletorDia");
+seletor.addEventListener("change", () => { diaEscolhido = seletor.value; desenhar(); });
+
+async function carregar() {
   try {
-    const res = await fetch(SUPABASE_URL + "/rest/v1/agenda_secretaria?select=*&order=start_time.asc", {
-      headers: { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY }
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/agenda_secretaria?select=nome,start_time,end_time,servico&order=start_time.asc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
     });
-    agendamentos = await res.json();
-    buildDaySelect();
-    renderDay();
-    setInterval(async () => {
-      const r = await fetch(SUPABASE_URL + "/rest/v1/agenda_secretaria?select=*&order=start_time.asc", {
-        headers: { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY }
-      });
-      agendamentos = await r.json();
-      renderDay();
-    }, 30000);
-  } catch (err) {
-    document.getElementById('list').innerHTML = '<div class="empty">Não foi possível carregar a agenda.</div>';
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    registros = await r.json();
+    document.getElementById("rodape").textContent = `Atualizado às ${agoraBrasil().hhmm}. A agenda se atualiza sozinha a cada 30 segundos.`;
+    montarSeletor();
+    desenhar();
+  } catch (e) {
+    document.getElementById("rodape").textContent = "";
+    document.getElementById("conteudo").innerHTML =
+      `<p class="erro">Não foi possível carregar a agenda. Confira a internet deste computador; a página tenta de novo em 30 segundos.</p>`;
   }
 }
 
-function dayKey(dateStr) {
-  return dateStr.slice(0, 10);
+function montarSeletor() {
+  const hoje = agoraBrasil().dia;
+  const dias = [...new Set(registros.map(r => partes(r.start_time).dia))].filter(d => d >= hoje);
+  if (!dias.includes(hoje)) dias.unshift(hoje);
+  dias.sort();
+  if (!diaEscolhido || !dias.includes(diaEscolhido)) diaEscolhido = hoje;
+  seletor.innerHTML = dias.map(d =>
+    `<option value="${d}" ${d === diaEscolhido ? "selected" : ""}>${d === hoje ? "Hoje" : nomeDoDia(d, true)}</option>`
+  ).join("");
 }
 
-function buildDaySelect() {
-  const days = [...new Set(agendamentos.map(a => dayKey(a.start_time)))].sort();
-  const sel = document.getElementById('day-select');
-  const todayKey = new Date().toISOString().slice(0, 10);
-  sel.innerHTML = days.map(d => {
-    const dt = new Date(d + 'T00:00:00');
-    const label = dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
-    const selected = d === todayKey ? 'selected' : '';
-    return `<option value="${d}" ${selected}>${label}${d === todayKey ? ' (hoje)' : ''}</option>`;
-  }).join('');
-}
+function desenhar() {
+  const agora = agoraBrasil();
+  const ehHoje = diaEscolhido === agora.dia;
+  const doDia = registros.filter(r => partes(r.start_time).dia === diaEscolhido);
 
-function renderDay() {
-  const sel = document.getElementById('day-select');
-  const key = sel.value;
-  const items = agendamentos.filter(a => dayKey(a.start_time) === key);
-  const list = document.getElementById('list');
-  if (items.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhum agendamento neste dia.</div>';
+  // Eventos de dia inteiro (ex: FERIADO) viram aviso, não paciente
+  const feriado = doDia.find(r => {
+    const i = partes(r.start_time), f = partes(r.end_time || r.start_time);
+    return /feriado/i.test(r.nome || "") || (i.min === 0 && f.dia > i.dia);
+  });
+  const pacientes = doDia.filter(r => r !== feriado);
+
+  document.getElementById("titulo").textContent = ehHoje
+    ? `Hoje, ${nomeDoDia(diaEscolhido).toLowerCase()}` : nomeDoDia(diaEscolhido);
+
+  const manha = pacientes.filter(r => partes(r.start_time).min < 12 * 60);
+  const tarde = pacientes.filter(r => partes(r.start_time).min >= 12 * 60);
+  const total = pacientes.length;
+  document.getElementById("resumo").textContent = total === 0 ? "" :
+    `${total} ${total === 1 ? "paciente" : "pacientes"}: ${manha.length} de manhã e ${tarde.length} à tarde.`;
+
+  // Destaque do próximo paciente (só no dia de hoje)
+  const destaque = document.getElementById("destaque");
+  destaque.innerHTML = "";
+  if (feriado) {
+    destaque.innerHTML = `<div class="feriado"><strong>Feriado: clínica fechada</strong>Nenhum atendimento neste dia.</div>`;
+  } else if (ehHoje && total) {
+    const prox = pacientes.find(r => partes(r.start_time).min >= agora.min);
+    if (prox) {
+      const falta = partes(prox.start_time).min - agora.min;
+      const quando = falta === 0 ? "agora" : falta < 60 ? `em ${falta} min, às ${partes(prox.start_time).hhmm}`
+        : `às ${partes(prox.start_time).hhmm}`;
+      const t = tipoDe(prox.servico);
+      destaque.innerHTML = `<div class="proximo"><p class="quando">Próximo paciente ${esc(quando)}</p>
+        <p class="quem">${esc(nomeBonito(prox.nome))}</p><p class="oque">${esc(t.rotulo || prox.servico)}</p></div>`;
+    } else {
+      destaque.innerHTML = `<div class="proximo"><p class="quando">Todos os horários de hoje já passaram</p></div>`;
+    }
+  }
+
+  const conteudo = document.getElementById("conteudo");
+  if (!total) {
+    conteudo.innerHTML = feriado ? "" : `<p class="vazio">Nenhum paciente agendado para este dia.</p>`;
     return;
   }
-  list.innerHTML = items.map(a => {
-    const time = new Date(a.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return `<div class="row">
-      <span class="time">${time}</span>
-      <div class="info">
-        <p class="nome">${a.nome}</p>
-        <p class="servico">${a.servico || 'Serviço não informado'}</p>
-      </div>
-    </div>`;
-  }).join('');
+
+  const proxRef = ehHoje ? pacientes.find(r => partes(r.start_time).min >= agora.min) : null;
+  const turno = (titulo, faixa, lista) => {
+    if (!lista.length) return "";
+    let html = "";
+    let marcou = false;
+    for (const r of lista) {
+      const p = partes(r.start_time);
+      const fim = r.end_time ? partes(r.end_time).min : p.min + 5;
+      if (ehHoje && !marcou && p.min >= agora.min && lista.some(x => partes(x.start_time).min < agora.min)) {
+        html += `<li class="agora" aria-label="Agora são ${agora.hhmm}"><span>Agora ${agora.hhmm}</span></li>`;
+        marcou = true;
+      }
+      const t = tipoDe(r.servico);
+      const coleta = temColeta(r.servico);
+      const coletaTarde = coleta && p.min > 9 * 60 + 45;
+      const estado = !ehHoje ? "" : (fim <= agora.min ? "passou" : (r === proxRef ? "vez" : ""));
+      // Só mostra o texto do serviço quando ele acrescenta algo ao tipo (ex: "Exame Clínico Demissional" não acrescenta)
+      const nucleo = (x) => semAcento(x).replace(/\b(exame|clinico|de|ao|a|o)\b/g, " ").replace(/\s+/g, " ").trim();
+      const servicoExtra = (r.servico || "").trim() && (!t.rotulo || nucleo(r.servico) !== nucleo(t.rotulo))
+        ? `<span class="servico">${esc(r.servico)}</span>` : "";
+      html += `<li class="linha ${estado}">
+        <span class="hora">${p.hhmm}</span>
+        <div class="corpo" style="--tipo:${t.cor}">
+          <div class="nome">${esc(nomeBonito(r.nome))}</div>
+          <div class="meta">
+            ${t.rotulo ? `<span class="tipo">${esc(t.rotulo)}</span>` : ""}
+            ${servicoExtra}
+            ${coleta ? `<span class="coleta ${coletaTarde ? "alerta" : ""}">${ICONE_FRASCO}${coletaTarde ? "Coleta depois das 9h45: confirmar com o paciente" : "Traz amostra (entrega até 9h45)"}</span>` : ""}
+          </div>
+        </div>
+      </li>`;
+    }
+    return `<section class="turno"><h2>${titulo} <span>${faixa}</span></h2><ol class="lista">${html}</ol></section>`;
+  };
+
+  // Linha do "agora" entre os turnos (ex: no almoço)
+  let entreTurnos = "";
+  if (ehHoje && manha.length && tarde.length) {
+    const ultimaManha = Math.max(...manha.map(r => partes(r.start_time).min));
+    const primeiraTarde = Math.min(...tarde.map(r => partes(r.start_time).min));
+    if (agora.min > ultimaManha && agora.min < primeiraTarde) {
+      entreTurnos = `<div class="agora" aria-label="Agora são ${agora.hhmm}"><span>Agora ${agora.hhmm}</span></div>`;
+    }
+  }
+
+  conteudo.innerHTML = turno("Manhã", "8h às 11h30", manha) + entreTurnos + turno("Tarde", "13h30 às 14h40", tarde);
 }
+
+/* ── Início ───────────────────────────────────────────── */
+if (liberado()) entrar();
+else document.getElementById("senha").focus();
 </script>
 </body>
 </html>

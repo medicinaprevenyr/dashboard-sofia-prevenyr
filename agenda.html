@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda - Clínica Prevenyr</title>
+<style>
+  :root {
+    --surface-0: #f7f6f2;
+    --surface-1: #ffffff;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-0: #121211;
+      --surface-1: #1e1e1c;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --border: rgba(255,255,255,0.10);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 2rem 1.5rem;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+  .subtitle { font-size: 14px; color: var(--text-secondary); margin: 0 0 1.5rem; }
+  select {
+    width: 100%; height: 44px; font-size: 15px; padding: 0 12px;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 0.5px solid var(--border); border-radius: 8px;
+    margin-bottom: 1.5rem; appearance: none;
+  }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row {
+    background: var(--surface-1); border: 0.5px solid var(--border);
+    border-radius: 8px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .time {
+    font-size: 15px; font-weight: 500; color: var(--accent);
+    min-width: 52px;
+  }
+  .info { flex: 1; min-width: 0; }
+  .nome { font-size: 15px; font-weight: 500; margin: 0 0 2px; }
+  .servico { font-size: 13px; color: var(--text-secondary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .empty { text-align: center; color: var(--text-muted); font-size: 14px; padding: 3rem 0; }
+  #gate {
+    max-width: 320px; margin: 4rem auto; text-align: center;
+  }
+  #gate input {
+    width: 100%; height: 44px; font-size: 15px; padding: 0 12px;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 0.5px solid var(--border); border-radius: 8px; margin: 12px 0;
+  }
+  #gate button {
+    width: 100%; height: 44px; font-size: 15px; font-weight: 500;
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    cursor: pointer;
+  }
+  #gate-error { color: #d03b3b; font-size: 13px; min-height: 18px; margin-top: 4px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1>Agenda Prevenyr</h1>
+  <p class="subtitle">Acesso restrito à equipe da clínica</p>
+  <input type="password" id="pw" placeholder="Senha de acesso" autocomplete="off">
+  <button onclick="checkPassword()">Entrar</button>
+  <div id="gate-error"></div>
+</div>
+
+<div class="wrap hidden" id="app">
+  <h1>Agenda Prevenyr</h1>
+  <p class="subtitle">Consulte os agendamentos do dia</p>
+
+  <select id="day-select" onchange="renderDay()"></select>
+
+  <div class="list" id="list"></div>
+</div>
+
+<script>
+const SENHA = "prevenyr2026";
+
+function checkPassword() {
+  const val = document.getElementById('pw').value;
+  if (val === SENHA) {
+    sessionStorage.setItem('agenda_auth', '1');
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    init();
+  } else {
+    document.getElementById('gate-error').textContent = 'Senha incorreta.';
+  }
+}
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
+
+if (sessionStorage.getItem('agenda_auth') === '1') {
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  init();
+}
+
+const SUPABASE_URL = "https://xhgriafqzqjmqbrmkiwy.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3JpYWZxenFqbXFicm1raXd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MzEzMTQsImV4cCI6MjA3NzUwNzMxNH0.gzbEaT-W4rF1cJ_mFtiK06_sxXtZ6oUZWcPvmaAte3s";
+
+let agendamentos = [];
+
+async function init() {
+  try {
+    const res = await fetch(SUPABASE_URL + "/rest/v1/agenda_secretaria?select=*&order=start_time.asc", {
+      headers: { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY }
+    });
+    agendamentos = await res.json();
+    buildDaySelect();
+    renderDay();
+    setInterval(async () => {
+      const r = await fetch(SUPABASE_URL + "/rest/v1/agenda_secretaria?select=*&order=start_time.asc", {
+        headers: { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY }
+      });
+      agendamentos = await r.json();
+      renderDay();
+    }, 30000);
+  } catch (err) {
+    document.getElementById('list').innerHTML = '<div class="empty">Não foi possível carregar a agenda.</div>';
+  }
+}
+
+function dayKey(dateStr) {
+  return dateStr.slice(0, 10);
+}
+
+function buildDaySelect() {
+  const days = [...new Set(agendamentos.map(a => dayKey(a.start_time)))].sort();
+  const sel = document.getElementById('day-select');
+  const todayKey = new Date().toISOString().slice(0, 10);
+  sel.innerHTML = days.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    const label = dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+    const selected = d === todayKey ? 'selected' : '';
+    return `<option value="${d}" ${selected}>${label}${d === todayKey ? ' (hoje)' : ''}</option>`;
+  }).join('');
+}
+
+function renderDay() {
+  const sel = document.getElementById('day-select');
+  const key = sel.value;
+  const items = agendamentos.filter(a => dayKey(a.start_time) === key);
+  const list = document.getElementById('list');
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty">Nenhum agendamento neste dia.</div>';
+    return;
+  }
+  list.innerHTML = items.map(a => {
+    const time = new Date(a.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `<div class="row">
+      <span class="time">${time}</span>
+      <div class="info">
+        <p class="nome">${a.nome}</p>
+        <p class="servico">${a.servico || 'Serviço não informado'}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

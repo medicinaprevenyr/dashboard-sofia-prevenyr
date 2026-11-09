@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Sofia - Clínica Prevenyr</title>
+<style>
+  :root {
+    --surface-0: #f7f6f2;
+    --surface-1: #ffffff;
+    --surface-2: #ffffff;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: rgba(11,11,11,0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-0: #121211;
+      --surface-1: #1e1e1c;
+      --surface-2: #1e1e1c;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --border: rgba(255,255,255,0.10);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 2rem 1.5rem;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+  .subtitle { font-size: 14px; color: var(--text-secondary); margin: 0 0 1.5rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .card { background: var(--surface-1); border-radius: 8px; padding: 1rem; border: 0.5px solid var(--border); }
+  .card p:first-child { font-size: 13px; color: var(--text-secondary); margin: 0 0 4px; }
+  .card p:last-child { font-size: 24px; font-weight: 500; margin: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary); }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .chart-wrap { position: relative; width: 100%; height: 240px; margin-bottom: 1.5rem; }
+  .section-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+  .errors-box { background: var(--surface-1); border-radius: 8px; overflow: hidden; border: 0.5px solid var(--border); }
+  .error-row { padding: 10px 1rem; border-bottom: 0.5px solid var(--border); display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+  .error-row:last-child { border-bottom: none; }
+  .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; font-size: 13px; color: var(--text-secondary); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #0ca30c; display: inline-block; }
+  .status-right { display: flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sofia — Clínica Prevenyr</h1>
+  <p class="subtitle">Dashboard de monitoramento do atendimento automatizado</p>
+  <h2 class="sr-only">Dashboard de monitoramento da Sofia, assistente de agendamento da Clínica Prevenyr, com métricas de contatos, agendamentos e erros atualizadas automaticamente</h2>
+
+  <div class="status-row">
+    <div>Atualizado às <span id="last-update">--:--</span></div>
+    <div class="status-right">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">ao vivo</span>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="card"><p>Contatos totais</p><p id="m-contatos">--</p></div>
+    <div class="card"><p>Em atendimento manual</p><p id="m-manual">--</p></div>
+    <div class="card"><p>Agendamentos futuros</p><p id="m-futuros">--</p></div>
+    <div class="card"><p>Agendamentos 7 dias</p><p id="m-7d">--</p></div>
+    <div class="card"><p>Erros últimas 24h</p><p id="m-erros">--</p></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:#2a78d6;"></span>Com Sofia</span>
+    <span><span class="swatch" style="background:#eda100;"></span>Atendimento manual</span>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="chartContatos" role="img" aria-label="Gráfico de barras empilhadas mostrando contatos atendidos pela Sofia versus em atendimento manual por dia">Volume diário de contatos, com e sem intervenção manual.</canvas>
+  </div>
+
+  <div class="section-label">Agendamentos por serviço (últimos 14 dias)</div>
+  <div class="chart-wrap">
+    <canvas id="chartAgendamentos" role="img" aria-label="Gráfico de barras de agendamentos por serviço nos últimos 14 dias">Total de agendamentos por tipo de serviço.</canvas>
+  </div>
+
+  <div id="erros-list"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SUPABASE_URL = "https://xhgriafqzqjmqbrmkiwy.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3JpYWZxenFqbXFicm1raXd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MzEzMTQsImV4cCI6MjA3NzUwNzMxNH0.gzbEaT-W4rF1cJ_mFtiK06_sxXtZ6oUZWcPvmaAte3s";
+
+async function sb(path) {
+  const res = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
+    headers: { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY }
+  });
+  if (!res.ok) throw new Error("Supabase error " + res.status);
+  return res.json();
+}
+
+let chartContatos, chartAgendamentos;
+
+function fmtDia(d) {
+  const dt = new Date(d);
+  return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+async function loadDashboard() {
+  try {
+    document.getElementById('status-dot').style.background = '#0ca30c';
+    document.getElementById('status-text').textContent = 'ao vivo';
+
+    const [resumo, contatos, agendamentos, erros] = await Promise.all([
+      sb('dashboard_resumo?select=*'),
+      sb('dashboard_contatos?select=*&order=dia.asc'),
+      sb('dashboard_agendamentos?select=*&order=dia.asc'),
+      sb('erros_sistema?select=*&order=created_at.desc&limit=5')
+    ]);
+
+    const r = resumo[0] || {};
+    document.getElementById('m-contatos').textContent = r.total_contatos ?? 0;
+    document.getElementById('m-manual').textContent = r.contatos_em_manual ?? 0;
+    document.getElementById('m-futuros').textContent = r.agendamentos_futuros ?? 0;
+    document.getElementById('m-7d').textContent = r.agendamentos_ultimos_7d ?? 0;
+    document.getElementById('m-erros').textContent = r.erros_ultimas_24h ?? 0;
+
+    const last14 = contatos.slice(-14);
+    const labels1 = last14.map(x => fmtDia(x.dia));
+    const comSofia = last14.map(x => x.com_sofia || 0);
+    const manual = last14.map(x => x.em_atendimento_manual || 0);
+
+    if (chartContatos) chartContatos.destroy();
+    chartContatos = new Chart(document.getElementById('chartContatos'), {
+      type: 'bar',
+      data: {
+        labels: labels1,
+        datasets: [
+          { label: 'Com Sofia', data: comSofia, backgroundColor: '#2a78d6', stack: 's' },
+          { label: 'Atendimento manual', data: manual, backgroundColor: '#eda100', stack: 's' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+
+    const porServico = {};
+    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    agendamentos.forEach(a => {
+      if (new Date(a.dia).getTime() >= cutoff) {
+        const key = a.servico || 'Não informado';
+        porServico[key] = (porServico[key] || 0) + Number(a.total || 0);
+      }
+    });
+    const servLabelsFull = Object.keys(porServico);
+    const servData = Object.values(porServico);
+    const palette = ['#2a78d6','#1baf7a','#eda100','#008300','#4a3aa7','#e34948','#e87ba4','#eb6834'];
+
+    function truncateLabel(str, max) {
+      return str.length > max ? str.slice(0, max - 1) + '…' : str;
+    }
+    const servLabels = servLabelsFull.map(l => truncateLabel(l, 18));
+
+    if (chartAgendamentos) chartAgendamentos.destroy();
+    chartAgendamentos = new Chart(document.getElementById('chartAgendamentos'), {
+      type: 'bar',
+      data: {
+        labels: servLabels,
+        datasets: [{ data: servData, backgroundColor: servLabelsFull.map((_, i) => palette[i % palette.length]), borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { title: (items) => servLabelsFull[items[0].dataIndex] } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 10 } } },
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+
+    const errosDiv = document.getElementById('erros-list');
+    if (erros.length === 0) {
+      errosDiv.innerHTML = '';
+    } else {
+      errosDiv.innerHTML = '<div class="section-label">Últimos erros registrados</div>' +
+        '<div class="errors-box">' +
+        erros.map(e => `<div class="error-row">
+          <span>${(e.mensagem || 'Sem descrição').slice(0,80)}</span>
+          <span style="color:var(--text-muted); white-space:nowrap;">${new Date(e.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+        </div>`).join('') + '</div>';
+    }
+
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch (err) {
+    document.getElementById('status-dot').style.background = '#d03b3b';
+    document.getElementById('status-text').textContent = 'erro ao atualizar';
+    console.error(err);
+  }
+}
+
+loadDashboard();
+setInterval(loadDashboard, 30000);
+</script>
+</body>
+</html>

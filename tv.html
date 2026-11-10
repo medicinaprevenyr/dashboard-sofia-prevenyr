@@ -46,6 +46,9 @@
   .proximo .oque { font-size: 2vw; color: var(--apagado); }
   .proximo.calmo { background: var(--painel); border-left-color: var(--apagado); }
   .proximo.calmo .quando { color: var(--tinta); }
+  .proximo.amanha { background: #13233A; border-left-color: var(--t-per); }
+  .proximo.amanha .quando { color: var(--t-per); }
+  .proximo.amanha .quem { font-size: 2.8vw; }
 
   /* Turnos lado a lado */
   .turnos { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-column-gap: 3vw; min-height: 0; }
@@ -211,57 +214,99 @@ function carregar() {
   });
 }
 
+function ehFeriadoReg(r) {
+  var i = partes(r.start_time), f = partes(r.end_time || r.start_time);
+  return /feriado/i.test(r.nome || "") || (i.min === 0 && f.dia > i.dia);
+}
+function pacientesDoDia(dia) {
+  return registros.filter(function (r) { return partes(r.start_time).dia === dia && !ehFeriadoReg(r); });
+}
+function feriadoNoDia(dia) {
+  return registros.some(function (r) { return partes(r.start_time).dia === dia && ehFeriadoReg(r); });
+}
+function fimDe(r) { return r.end_time ? partes(r.end_time).min : partes(r.start_time).min + 5; }
+function diaSeguinte(iso) {
+  var d = iso.split("-").map(Number);
+  return new Date(Date.UTC(d[0], d[1] - 1, d[2] + 1)).toISOString().slice(0, 10);
+}
+// Próximo dia (depois de hoje) que tenha paciente agendado
+function proximoDiaComPacientes(hoje) {
+  var dias = registros.filter(function (r) { return !ehFeriadoReg(r); })
+    .map(function (r) { return partes(r.start_time).dia; })
+    .filter(function (d) { return d > hoje; }).sort();
+  return dias.length ? dias[0] : null;
+}
+
+function escreverResumo(pacientes, manha, tarde, sufixo) {
+  var total = pacientes.length, t = "";
+  if (total) {
+    t = total + (total === 1 ? " paciente" : " pacientes") + sufixo + ": ";
+    if (!tarde.length) t += "todos de manhã.";
+    else if (!manha.length) t += "todos à tarde.";
+    else t += manha.length + " de manhã e " + tarde.length + " à tarde.";
+  }
+  document.getElementById("resumo").textContent = t;
+}
+
 function desenhar() {
   var agora = agoraBrasil();
   document.getElementById("relogio").textContent = agora.hhmm;
-  document.getElementById("dia").textContent = nomeDoDia(agora.dia);
-
-  var doDia = registros.filter(function (r) { return partes(r.start_time).dia === agora.dia; });
-  var feriado = null;
-  var pacientes = doDia.filter(function (r) {
-    var i = partes(r.start_time), f = partes(r.end_time || r.start_time);
-    var ehFeriado = /feriado/i.test(r.nome || "") || (i.min === 0 && f.dia > i.dia);
-    if (ehFeriado) feriado = r;
-    return !ehFeriado;
-  });
-  var manha = pacientes.filter(function (r) { return partes(r.start_time).min < 720; });
-  var tarde = pacientes.filter(function (r) { return partes(r.start_time).min >= 720; });
-
-  var total = pacientes.length;
-  var resumo = "";
-  if (total) {
-    resumo = total + (total === 1 ? " paciente hoje" : " pacientes hoje") + ": ";
-    if (!tarde.length) resumo += "todos de manhã.";
-    else if (!manha.length) resumo += "todos à tarde.";
-    else resumo += manha.length + " de manhã e " + tarde.length + " à tarde.";
-  }
-  document.getElementById("resumo").textContent = resumo;
-
   var destaque = document.getElementById("destaque");
   var conteudo = document.getElementById("conteudo");
 
-  if (feriado || !total) {
-    destaque.innerHTML = "";
-    conteudo.className = "vazio";
-    conteudo.innerHTML = feriado ? "Feriado: clínica fechada hoje." : (falhou ? "" : "Nenhum paciente agendado para hoje.");
+  var hoje = pacientesDoDia(agora.dia);
+  var feriadoHoje = feriadoNoDia(agora.dia);
+  var restamHoje = hoje.filter(function (r) { return fimDe(r) > agora.min; }).length;
+
+  /* Hoje ainda tem atendimento: mostra o dia corrente */
+  if (!feriadoHoje && restamHoje) {
+    document.getElementById("dia").textContent = nomeDoDia(agora.dia);
+    var manha = hoje.filter(function (r) { return partes(r.start_time).min < 720; });
+    var tarde = hoje.filter(function (r) { return partes(r.start_time).min >= 720; });
+    escreverResumo(hoje, manha, tarde, " hoje");
+
+    var prox = null;
+    for (var i = 0; i < hoje.length; i++) { if (partes(hoje[i].start_time).min >= agora.min) { prox = hoje[i]; break; } }
+    if (prox) {
+      var falta = partes(prox.start_time).min - agora.min;
+      var quando = falta === 0 ? "Próximo paciente: agora, " + partes(prox.start_time).hhmm
+        : falta < 60 ? "Próximo paciente em " + falta + " min, às " + partes(prox.start_time).hhmm
+        : "Próximo paciente às " + partes(prox.start_time).hhmm;
+      destaque.innerHTML = '<div class="proximo"><div class="quando">' + esc(quando) + '</div>' +
+        '<span class="quem">' + esc(nomeBonito(prox.nome)) + '</span><span class="oque">' + esc(tipoDe(prox.servico).rotulo) + '</span></div>';
+    } else {
+      destaque.innerHTML = '<div class="proximo calmo"><div class="quando">Último paciente do dia em atendimento.</div></div>';
+    }
+    conteudo.className = "turnos";
+    conteudo.innerHTML = turno("Manhã", manha, agora, prox) + turno("Tarde", tarde, agora, prox);
+    caberNaTela();
     return;
   }
 
-  var prox = null;
-  for (var i = 0; i < pacientes.length; i++) { if (partes(pacientes[i].start_time).min >= agora.min) { prox = pacientes[i]; break; } }
-  if (prox) {
-    var falta = partes(prox.start_time).min - agora.min;
-    var quando = falta === 0 ? "Próximo paciente: agora, " + partes(prox.start_time).hhmm
-      : falta < 60 ? "Próximo paciente em " + falta + " min, às " + partes(prox.start_time).hhmm
-      : "Próximo paciente às " + partes(prox.start_time).hhmm;
-    destaque.innerHTML = '<div class="proximo"><div class="quando">' + esc(quando) + '</div>' +
-      '<span class="quem">' + esc(nomeBonito(prox.nome)) + '</span><span class="oque">' + esc(tipoDe(prox.servico).rotulo) + '</span></div>';
-  } else {
-    destaque.innerHTML = '<div class="proximo calmo"><div class="quando">Todos os horários de hoje já passaram.</div></div>';
+  /* Hoje acabou (ou não tem atendimento): mostra o próximo dia com pacientes */
+  var motivo = feriadoHoje ? "Hoje é feriado." : (hoje.length ? "Os atendimentos de hoje terminaram." : "Hoje não há pacientes agendados.");
+  var alvo = proximoDiaComPacientes(agora.dia);
+  if (!alvo) {
+    document.getElementById("dia").textContent = nomeDoDia(agora.dia);
+    document.getElementById("resumo").textContent = "";
+    destaque.innerHTML = "";
+    conteudo.className = "vazio";
+    conteudo.innerHTML = falhou ? "" : motivo + " Ainda não há pacientes marcados para os próximos dias.";
+    return;
   }
-
+  var ehAmanha = alvo === diaSeguinte(agora.dia);
+  document.getElementById("dia").textContent = ehAmanha ? "Amanhã, " + nomeDoDia(alvo).toLowerCase() : nomeDoDia(alvo);
+  var lista = pacientesDoDia(alvo);
+  var m2 = lista.filter(function (r) { return partes(r.start_time).min < 720; });
+  var t2 = lista.filter(function (r) { return partes(r.start_time).min >= 720; });
+  escreverResumo(lista, m2, t2, "");
+  var primeiro = lista[0];
+  destaque.innerHTML = '<div class="proximo amanha"><div class="quando">' + esc(motivo) + ' Esta é a agenda ' +
+    (ehAmanha ? "de amanhã." : "do próximo dia de atendimento.") + '</div>' +
+    '<span class="quem">Primeiro paciente às ' + partes(primeiro.start_time).hhmm + ': ' + esc(nomeBonito(primeiro.nome)) + '</span></div>';
   conteudo.className = "turnos";
-  conteudo.innerHTML = turno("Manhã", manha, agora, prox) + turno("Tarde", tarde, agora, prox);
+  var antesDeTudo = { min: -1 };
+  conteudo.innerHTML = turno("Manhã", m2, antesDeTudo, null) + turno("Tarde", t2, antesDeTudo, null);
   caberNaTela();
 }
 

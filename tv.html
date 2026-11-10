@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda na TV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Feito para ser lido de longe: tudo em vw/vh, fundo escuro fixo.
+     Evita recursos novos de CSS/JS para funcionar em navegadores de smart TV mais antigos. */
+  :root {
+    --fundo: #0B1419;
+    --painel: #13212A;
+    --tinta: #E8F0F2;
+    --apagado: #8FA3AC;
+    --linha: #23343E;
+    --agora: #FF6B5C;
+    --agora-fundo: #2A1C1D;
+    --t-adm: #4CC48A;
+    --t-per: #6FA8EA;
+    --t-dem: #F08A4F;
+    --t-ret: #B38BEF;
+    --t-mud: #D9B544;
+    --t-out: #8C9DA5;
+    --display: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+    --corpo: "Atkinson Hyperlegible", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--fundo); color: var(--tinta); font-family: var(--corpo); cursor: none; }
+
+  .tela { height: 100vh; display: flex; flex-direction: column; padding: 2.6vh 3vw 2vh; }
+
+  /* Cabeçalho */
+  .topo { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 1.6vh; border-bottom: 0.25vh solid var(--linha); }
+  .dia { font-family: var(--display); font-weight: 700; font-size: 4.4vw; line-height: 1; }
+  .resumo { font-size: 1.5vw; color: var(--apagado); margin-top: 0.8vh; }
+  .relogio { font-family: var(--display); font-weight: 600; font-size: 6vw; line-height: .9; letter-spacing: .02em; }
+
+  /* Próximo paciente */
+  .proximo { margin: 2.2vh 0 2.4vh; padding: 1.8vh 2vw; background: var(--agora-fundo); border-left: 0.8vw solid var(--agora); border-radius: 0 1vw 1vw 0; display: flex; align-items: baseline; flex-wrap: wrap; }
+  .proximo .quando { font-family: var(--display); font-weight: 600; font-size: 2.2vw; color: var(--agora); width: 100%; }
+  .proximo .quem { font-weight: 700; font-size: 3.4vw; line-height: 1.15; margin-right: 1.6vw; }
+  .proximo .oque { font-size: 2vw; color: var(--apagado); }
+  .proximo.calmo { background: var(--painel); border-left-color: var(--apagado); }
+  .proximo.calmo .quando { color: var(--tinta); }
+
+  /* Turnos lado a lado */
+  .turnos { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-column-gap: 3vw; min-height: 0; }
+  .turno { display: flex; flex-direction: column; min-height: 0; }
+  .turno h2 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 2.3vw; padding-bottom: 0.8vh; border-bottom: 0.25vh solid var(--tinta); }
+  .turno h2 span { font-family: var(--corpo); font-weight: 400; font-size: 1.3vw; color: var(--apagado); margin-left: 0.8vw; }
+  .lista { flex: 1; min-height: 0; overflow: hidden; }
+  .linha { display: flex; align-items: center; padding: 1.1vh 0; border-bottom: 0.15vh solid var(--linha); }
+  .hora { font-family: var(--display); font-weight: 700; font-size: 2.6vw; width: 7.4vw; flex: none; }
+  .corpo { border-left: 0.45vw solid var(--t-out); padding-left: 1vw; min-width: 0; flex: 1; }
+  .nome { font-weight: 700; font-size: 1.9vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tipo { font-weight: 700; font-size: 1.35vw; }
+  .coleta { font-size: 1.25vw; color: var(--apagado); margin-left: 0.8vw; }
+  .coleta.alerta { color: var(--agora); font-weight: 700; }
+  .linha.vez { background: var(--agora-fundo); }
+  .linha.vez .hora { color: var(--agora); }
+  .linha.agora-em-atendimento .hora { color: var(--apagado); }
+  .aviso { font-size: 1.5vw; color: var(--apagado); padding: 1.2vh 0; border-bottom: 0.15vh solid var(--linha); }
+  .mais { font-size: 1.5vw; color: var(--apagado); padding-top: 1.2vh; }
+
+  .vazio { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-family: var(--display); font-size: 4vw; color: var(--apagado); }
+
+  .rodape { font-size: 1.1vw; color: var(--apagado); padding-top: 1vh; display: flex; justify-content: space-between; }
+  .rodape .erro { color: var(--agora); }
+
+  /* Tela de senha (só aparece uma vez por aparelho) */
+  .portao { height: 100vh; display: flex; align-items: center; justify-content: center; cursor: auto; }
+  .portao form { width: 34vw; min-width: 320px; background: var(--painel); padding: 4vh 3vw; border-radius: 1vw; }
+  .portao h1 { font-family: var(--display); font-size: 3vw; margin: 0 0 1vh; }
+  .portao p { color: var(--apagado); font-size: 1.4vw; margin: 0 0 3vh; }
+  .portao input, .portao button { width: 100%; font: inherit; font-size: 1.8vw; padding: 1.4vh 1vw; border-radius: 0.6vw; }
+  .portao input { border: 2px solid var(--linha); background: var(--fundo); color: var(--tinta); }
+  .portao button { margin-top: 2vh; border: 0; background: var(--t-adm); color: #06150E; font-weight: 700; }
+  .portao input:focus, .portao button:focus { outline: 4px solid var(--tinta); }
+  .portao .msg { color: var(--agora); font-size: 1.4vw; min-height: 3vh; margin: 1.5vh 0 0; }
+  .oculto { display: none !important; }
+</style>
+</head>
+<body>
+
+<section class="portao" id="portao">
+  <form id="formSenha" autocomplete="off">
+    <h1>Agenda na TV</h1>
+    <p>Digite a senha uma vez. Este aparelho vai lembrar dela.</p>
+    <input id="senha" type="password" aria-label="Senha">
+    <button type="submit">Entrar</button>
+    <p class="msg" id="msgSenha" role="alert"></p>
+  </form>
+</section>
+
+<div class="tela oculto" id="tela">
+  <header class="topo">
+    <div>
+      <div class="dia" id="dia">Carregando agenda</div>
+      <div class="resumo" id="resumo"></div>
+    </div>
+    <div class="relogio" id="relogio">--:--</div>
+  </header>
+  <div id="destaque"></div>
+  <main id="conteudo" class="turnos"></main>
+  <footer class="rodape"><span id="atualizado"></span><span>Clínica Prevenyr</span></footer>
+</div>
+
+<script>
+/* ── Configuração ─────────────────────────────────────── */
+var SENHA = "prevenyr2026";            // a mesma da agenda da recepção
+var SUPABASE_URL = "https://xhgriafqzqjmqbrmkiwy.supabase.co";
+var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3JpYWZxenFqbXFicm1raXd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MzEzMTQsImV4cCI6MjA3NzUwNzMxNH0.gzbEaT-W4rF1cJ_mFtiK06_sxXtZ6oUZWcPvmaAte3s";
+var ATUALIZA_MS = 30000;
+var RECARREGA_MS = 6 * 60 * 60 * 1000;   // recarrega a página a cada 6h (pega versões novas)
+var FUSO = "America/Sao_Paulo";
+
+/* ── Senha lembrada no aparelho ───────────────────────── */
+function lembrada() { try { return localStorage.getItem("agenda_tv_ok") === "1"; } catch (e) { return false; } }
+function entrar() {
+  try { localStorage.setItem("agenda_tv_ok", "1"); } catch (e) {}
+  document.getElementById("portao").className += " oculto";
+  document.getElementById("tela").className = "tela";
+  manterTelaAcesa();
+  carregar();
+  setInterval(carregar, ATUALIZA_MS);
+  setInterval(desenhar, 15000);            // relógio e "em X min" andam entre as buscas
+  setTimeout(function () { location.reload(); }, RECARREGA_MS);
+}
+document.getElementById("formSenha").addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  var campo = document.getElementById("senha");
+  if (campo.value === SENHA) entrar();
+  else { document.getElementById("msgSenha").textContent = "Senha incorreta. Tente de novo."; campo.value = ""; }
+});
+
+/* Evita que a TV apague a tela (quando o navegador permite) */
+var trava = null;
+function manterTelaAcesa() {
+  try {
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      navigator.wakeLock.request("screen").then(function (t) { trava = t; }).catch(function () {});
+    }
+  } catch (e) {}
+}
+document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") manterTelaAcesa(); });
+
+/* ── Datas no horário de Brasília ─────────────────────── */
+function agoraBrasil() {
+  var p = {};
+  new Intl.DateTimeFormat("en-CA", { timeZone: FUSO, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+    .formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+  var h = Number(p.hour) % 24;
+  return { dia: p.year + "-" + p.month + "-" + p.day, min: h * 60 + Number(p.minute), hhmm: dois(h) + ":" + p.minute };
+}
+function dois(n) { return (n < 10 ? "0" : "") + n; }
+function partes(ts) {
+  var s = String(ts).replace(" ", "T").split("T");
+  var hm = (s[1] || "00:00").split(":");
+  var h = Number(hm[0]), m = Number(hm[1]);
+  return { dia: s[0], min: h * 60 + m, hhmm: dois(h) + ":" + dois(m) };
+}
+var DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+var MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+function nomeDoDia(iso) {
+  var d = iso.split("-").map(Number);
+  return DIAS[new Date(Date.UTC(d[0], d[1] - 1, d[2])).getUTCDay()] + ", " + d[2] + " de " + MESES[d[1] - 1];
+}
+
+/* ── Tipo de exame, coleta e nomes (mesmas regras da agenda da recepção) ── */
+function semAcento(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+function tipoDe(servico) {
+  var s = semAcento(servico);
+  if (!s.trim()) return { rotulo: "Serviço não informado", cor: "var(--t-out)" };
+  if (/admiss/.test(s)) return { rotulo: "Admissional", cor: "var(--t-adm)" };
+  if (/demiss/.test(s)) return { rotulo: "Demissional", cor: "var(--t-dem)" };
+  if (/period/.test(s)) return { rotulo: "Periódico", cor: "var(--t-per)" };
+  if (/retorno/.test(s)) return { rotulo: "Retorno ao trabalho", cor: "var(--t-ret)" };
+  if (/mudanca|risco|funcao/.test(s)) return { rotulo: "Mudança de função", cor: "var(--t-mud)" };
+  return { rotulo: String(servico), cor: "var(--t-out)" };
+}
+function temColeta(servico) { return /coprocult|parasitol|fezes|urina|urocult|laborat|sangue oculto|\bppf\b|\bepf\b|\beas\b/.test(semAcento(servico)); }
+var PARTICULAS = { da: 1, de: 1, "do": 1, das: 1, dos: 1, e: 1 };
+function nomeBonito(s) {
+  return String(s || "Paciente").trim().toLowerCase().split(/\s+/).map(function (p, i) {
+    return i > 0 && PARTICULAS[p] ? p : p.charAt(0).toUpperCase() + p.slice(1);
+  }).join(" ");
+}
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+/* ── Dados ────────────────────────────────────────────── */
+var registros = [];
+var falhou = false;
+function carregar() {
+  fetch(SUPABASE_URL + "/rest/v1/agenda_secretaria?select=nome,start_time,end_time,servico&order=start_time.asc", {
+    headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY }
+  }).then(function (r) {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  }).then(function (dados) {
+    registros = dados; falhou = false;
+    document.getElementById("atualizado").innerHTML = "Atualizado às " + agoraBrasil().hhmm;
+    desenhar();
+  }).catch(function () {
+    falhou = true;
+    document.getElementById("atualizado").innerHTML = '<span class="erro">Sem conexão com a agenda. Tentando de novo em 30 segundos.</span>';
+    desenhar();
+  });
+}
+
+function desenhar() {
+  var agora = agoraBrasil();
+  document.getElementById("relogio").textContent = agora.hhmm;
+  document.getElementById("dia").textContent = nomeDoDia(agora.dia);
+
+  var doDia = registros.filter(function (r) { return partes(r.start_time).dia === agora.dia; });
+  var feriado = null;
+  var pacientes = doDia.filter(function (r) {
+    var i = partes(r.start_time), f = partes(r.end_time || r.start_time);
+    var ehFeriado = /feriado/i.test(r.nome || "") || (i.min === 0 && f.dia > i.dia);
+    if (ehFeriado) feriado = r;
+    return !ehFeriado;
+  });
+  var manha = pacientes.filter(function (r) { return partes(r.start_time).min < 720; });
+  var tarde = pacientes.filter(function (r) { return partes(r.start_time).min >= 720; });
+
+  var total = pacientes.length;
+  var resumo = "";
+  if (total) {
+    resumo = total + (total === 1 ? " paciente hoje" : " pacientes hoje") + ": ";
+    if (!tarde.length) resumo += "todos de manhã.";
+    else if (!manha.length) resumo += "todos à tarde.";
+    else resumo += manha.length + " de manhã e " + tarde.length + " à tarde.";
+  }
+  document.getElementById("resumo").textContent = resumo;
+
+  var destaque = document.getElementById("destaque");
+  var conteudo = document.getElementById("conteudo");
+
+  if (feriado || !total) {
+    destaque.innerHTML = "";
+    conteudo.className = "vazio";
+    conteudo.innerHTML = feriado ? "Feriado: clínica fechada hoje." : (falhou ? "" : "Nenhum paciente agendado para hoje.");
+    return;
+  }
+
+  var prox = null;
+  for (var i = 0; i < pacientes.length; i++) { if (partes(pacientes[i].start_time).min >= agora.min) { prox = pacientes[i]; break; } }
+  if (prox) {
+    var falta = partes(prox.start_time).min - agora.min;
+    var quando = falta === 0 ? "Próximo paciente: agora, " + partes(prox.start_time).hhmm
+      : falta < 60 ? "Próximo paciente em " + falta + " min, às " + partes(prox.start_time).hhmm
+      : "Próximo paciente às " + partes(prox.start_time).hhmm;
+    destaque.innerHTML = '<div class="proximo"><div class="quando">' + esc(quando) + '</div>' +
+      '<span class="quem">' + esc(nomeBonito(prox.nome)) + '</span><span class="oque">' + esc(tipoDe(prox.servico).rotulo) + '</span></div>';
+  } else {
+    destaque.innerHTML = '<div class="proximo calmo"><div class="quando">Todos os horários de hoje já passaram.</div></div>';
+  }
+
+  conteudo.className = "turnos";
+  conteudo.innerHTML = turno("Manhã", manha, agora, prox) + turno("Tarde", tarde, agora, prox);
+  caberNaTela();
+}
+
+function turno(titulo, lista, agora, prox) {
+  var html = '<section class="turno"><h2>' + titulo + '<span>' +
+    (lista.length ? lista.length + (lista.length === 1 ? " paciente" : " pacientes") : "sem pacientes") + '</span></h2><div class="lista">';
+  var passados = lista.filter(function (r) {
+    var fim = r.end_time ? partes(r.end_time).min : partes(r.start_time).min + 5;
+    return fim <= agora.min;
+  });
+  var restantes = lista.filter(function (r) { return passados.indexOf(r) < 0; });
+  if (passados.length) {
+    html += '<div class="aviso">' + (restantes.length ? passados.length + (passados.length === 1 ? " já atendido" : " já atendidos")
+      : "Turno encerrado: " + passados.length + (passados.length === 1 ? " atendido" : " atendidos")) + '</div>';
+  }
+  restantes.forEach(function (r) {
+    var p = partes(r.start_time), t = tipoDe(r.servico);
+    var coleta = temColeta(r.servico), tarde = coleta && p.min > 9 * 60 + 45;
+    var classe = r === prox ? "linha vez" : (p.min < agora.min ? "linha agora-em-atendimento" : "linha");
+    html += '<div class="' + classe + '"><span class="hora">' + p.hhmm + '</span>' +
+      '<div class="corpo" style="border-left-color:' + t.cor + '">' +
+      '<div class="nome">' + esc(nomeBonito(r.nome)) + '</div>' +
+      '<div><span class="tipo" style="color:' + t.cor + '">' + esc(t.rotulo) + '</span>' +
+      (coleta ? '<span class="coleta' + (tarde ? ' alerta' : '') + '">' + (tarde ? "Coleta depois das 9h45" : "Traz amostra") + '</span>' : '') +
+      '</div></div></div>';
+  });
+  return html + '</div></section>';
+}
+
+/* Se a lista não couber, esconde o fim e mostra "+ N mais tarde" */
+function caberNaTela() {
+  var listas = document.querySelectorAll(".lista");
+  for (var i = 0; i < listas.length; i++) {
+    var lista = listas[i];
+    var linhas = lista.querySelectorAll(".linha");
+    var limite = lista.getBoundingClientRect().bottom;
+    var escondidas = 0;
+    for (var j = linhas.length - 1; j >= 0; j--) {
+      if (linhas[j].getBoundingClientRect().bottom > limite - 1 || (escondidas > 0 && linhas[j].getBoundingClientRect().bottom > limite - lista.offsetHeight * 0.08)) {
+        linhas[j].style.display = "none"; escondidas++;
+      } else break;
+    }
+    if (escondidas) {
+      var mais = document.createElement("div");
+      mais.className = "mais";
+      mais.textContent = "+ " + escondidas + (escondidas === 1 ? " paciente depois" : " pacientes depois");
+      lista.appendChild(mais);
+    }
+  }
+}
+window.addEventListener("resize", desenhar);
+
+/* ── Início ───────────────────────────────────────────── */
+if (lembrada()) entrar();
+else document.getElementById("senha").focus();
+</script>
+</body>
+</html>

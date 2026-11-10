@@ -31,59 +31,63 @@
   html, body { margin: 0; height: 100%; overflow: hidden; }
   body { background: var(--fundo); color: var(--tinta); font-family: var(--corpo); cursor: none; }
 
-  .tela { height: 100vh; display: flex; flex-direction: column; padding: 2.6vh 3vw 2vh; }
+  .tela { height: 100vh; display: flex; flex-direction: column; padding: 1.755rem 3.6rem 1.35rem; }
 
   /* Cabeçalho */
-  .topo { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 1.6vh; border-bottom: 0.25vh solid var(--linha); }
-  .dia { font-family: var(--display); font-weight: 700; font-size: 4.4vw; line-height: 1; }
-  .resumo { font-size: 1.5vw; color: var(--apagado); margin-top: 0.8vh; }
-  .relogio { font-family: var(--display); font-weight: 600; font-size: 6vw; line-height: .9; letter-spacing: .02em; }
+  .topo { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 1.08rem; border-bottom: 0.169rem solid var(--linha); }
+  .dia { font-family: var(--display); font-weight: 700; font-size: 5.28rem; line-height: 1; }
+  .resumo { font-size: 1.8rem; color: var(--apagado); margin-top: 0.54rem; }
+  .relogio { font-family: var(--display); font-weight: 600; font-size: 7.2rem; line-height: .9; letter-spacing: .02em; }
 
   /* Próximo paciente */
-  .proximo { margin: 2.2vh 0 2.4vh; padding: 1.8vh 2vw; background: var(--agora-fundo); border-left: 0.8vw solid var(--agora); border-radius: 0 1vw 1vw 0; display: flex; align-items: baseline; flex-wrap: wrap; }
-  .proximo .quando { font-family: var(--display); font-weight: 600; font-size: 2.2vw; color: var(--agora); width: 100%; }
-  .proximo .quem { font-weight: 700; font-size: 3.4vw; line-height: 1.15; margin-right: 1.6vw; }
-  .proximo .oque { font-size: 2vw; color: var(--apagado); }
+  .proximo { margin: 1.485rem 0 1.62rem; padding: 1.215rem 2.4rem; background: var(--agora-fundo); border-left: 0.96rem solid var(--agora); border-radius: 0 1.2rem 1.2rem 0; display: flex; align-items: baseline; flex-wrap: wrap; }
+  .proximo .quando { font-family: var(--display); font-weight: 600; font-size: 2.64rem; color: var(--agora); width: 100%; }
+  .proximo .quem { font-weight: 700; font-size: 4.08rem; line-height: 1.15; margin-right: 1.92rem; }
+  .proximo .oque { font-size: 2.4rem; color: var(--apagado); }
   .proximo.calmo { background: var(--painel); border-left-color: var(--apagado); }
   .proximo.calmo .quando { color: var(--tinta); }
   .proximo.amanha { background: #13233A; border-left-color: var(--t-per); }
   .proximo.amanha .quando { color: var(--t-per); }
-  .proximo.amanha .quem { font-size: 2.8vw; }
+  .proximo.amanha .quem { font-size: 3.36rem; }
 
   /* Turnos lado a lado */
-  .turnos { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-column-gap: 3vw; min-height: 0; }
+  .turnos { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-column-gap: 3.6rem; min-height: 0; }
   .turno { display: flex; flex-direction: column; min-height: 0; }
-  .turno h2 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 2.3vw; padding-bottom: 0.8vh; border-bottom: 0.25vh solid var(--tinta); }
-  .turno h2 span { font-family: var(--corpo); font-weight: 400; font-size: 1.3vw; color: var(--apagado); margin-left: 0.8vw; }
+  .turno h2 { display: flex; align-items: baseline; margin: 0; font-family: var(--display); font-weight: 600; font-size: 2.76rem; padding-bottom: 0.54rem; border-bottom: 0.169rem solid var(--tinta); }
+  .turno h2 span { font-family: var(--corpo); font-weight: 400; font-size: 1.56rem; color: var(--apagado); margin-left: 0.96rem; }
   .lista { flex: 1; min-height: 0; overflow: hidden; }
-  .linha { display: flex; align-items: center; padding: 1.1vh 0; border-bottom: 0.15vh solid var(--linha); }
-  .hora { font-family: var(--display); font-weight: 700; font-size: 2.6vw; width: 7.4vw; flex: none; }
-  .corpo { border-left: 0.45vw solid var(--t-out); padding-left: 1vw; min-width: 0; flex: 1; }
-  .nome { font-weight: 700; font-size: 1.9vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tipo { font-weight: 700; font-size: 1.35vw; }
-  .coleta { font-size: 1.25vw; color: var(--apagado); margin-left: 0.8vw; }
+  .linha { display: flex; align-items: center; padding: 0.743rem 0; border-bottom: 0.101rem solid var(--linha); }
+  .hora { font-family: var(--display); font-weight: 700; font-size: 3.12rem; width: 8.88rem; flex: none; }
+  .corpo { border-left: 0.54rem solid var(--t-out); padding-left: 1.2rem; min-width: 0; flex: 1; }
+  .nome { font-weight: 700; font-size: 2.28rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tipo { font-weight: 700; font-size: 1.62rem; }
+  .coleta { font-size: 1.5rem; color: var(--apagado); margin-left: 0.96rem; }
   .coleta.alerta { color: var(--agora); font-weight: 700; }
   .linha.vez { background: var(--agora-fundo); }
   .linha.vez .hora { color: var(--agora); }
   .linha.agora-em-atendimento .hora { color: var(--apagado); }
-  .aviso { font-size: 1.5vw; color: var(--apagado); padding: 1.2vh 0; border-bottom: 0.15vh solid var(--linha); }
-  .mais { font-size: 1.5vw; color: var(--apagado); padding-top: 1.2vh; }
+  .aviso { font-size: 1.8rem; color: var(--apagado); padding: 0.81rem 0; border-bottom: 0.101rem solid var(--linha); }
+  .turno h2 .mais { margin-left: auto; font-style: normal; font-family: var(--corpo); font-weight: 700; font-size: 1.6rem; color: var(--tinta); }
+  .turno.largo { grid-column: 1 / 3; }
+  .largo .lista { -webkit-column-count: 2; column-count: 2; -webkit-column-gap: 3.6rem; column-gap: 3.6rem; -webkit-column-fill: auto; column-fill: auto; }
+  .linha, .aviso { -webkit-column-break-inside: avoid; page-break-inside: avoid; break-inside: avoid; }
+  .mais-antigo { font-size: 1.8rem; color: var(--apagado); padding-top: 0.81rem; }
 
-  .vazio { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-family: var(--display); font-size: 4vw; color: var(--apagado); }
+  .vazio { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-family: var(--display); font-size: 4.8rem; color: var(--apagado); }
 
-  .rodape { font-size: 1.1vw; color: var(--apagado); padding-top: 1vh; display: flex; justify-content: space-between; }
+  .rodape { font-size: 1.32rem; color: var(--apagado); padding-top: 0.675rem; display: flex; justify-content: space-between; }
   .rodape .erro { color: var(--agora); }
 
   /* Tela de senha (só aparece uma vez por aparelho) */
   .portao { height: 100vh; display: flex; align-items: center; justify-content: center; cursor: auto; }
-  .portao form { width: 34vw; min-width: 320px; background: var(--painel); padding: 4vh 3vw; border-radius: 1vw; }
-  .portao h1 { font-family: var(--display); font-size: 3vw; margin: 0 0 1vh; }
-  .portao p { color: var(--apagado); font-size: 1.4vw; margin: 0 0 3vh; }
-  .portao input, .portao button { width: 100%; font: inherit; font-size: 1.8vw; padding: 1.4vh 1vw; border-radius: 0.6vw; }
+  .portao form { width: 40.8rem; min-width: 320px; background: var(--painel); padding: 2.7rem 3.6rem; border-radius: 1.2rem; }
+  .portao h1 { font-family: var(--display); font-size: 3.6rem; margin: 0 0 0.675rem; }
+  .portao p { color: var(--apagado); font-size: 1.68rem; margin: 0 0 2.025rem; }
+  .portao input, .portao button { width: 100%; font: inherit; font-size: 2.16rem; padding: 0.945rem 1.2rem; border-radius: 0.72rem; }
   .portao input { border: 2px solid var(--linha); background: var(--fundo); color: var(--tinta); }
-  .portao button { margin-top: 2vh; border: 0; background: var(--t-adm); color: #06150E; font-weight: 700; }
+  .portao button { margin-top: 1.35rem; border: 0; background: var(--t-adm); color: #06150E; font-weight: 700; }
   .portao input:focus, .portao button:focus { outline: 4px solid var(--tinta); }
-  .portao .msg { color: var(--agora); font-size: 1.4vw; min-height: 3vh; margin: 1.5vh 0 0; }
+  .portao .msg { color: var(--agora); font-size: 1.68rem; min-height: 2.025rem; margin: 1.013rem 0 0; }
   .oculto { display: none !important; }
 </style>
 </head>
@@ -120,6 +124,13 @@ var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 var ATUALIZA_MS = 30000;
 var RECARREGA_MS = 6 * 60 * 60 * 1000;   // recarrega a página a cada 6h (pega versões novas)
 var FUSO = "America/Sao_Paulo";
+
+/* Tamanho base: proporcional à tela, limitado pela altura (janelas com barra de navegador) */
+function escala() {
+  var f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * 16;
+  document.documentElement.style.fontSize = Math.max(f, 6) + "px";
+}
+escala();
 
 /* ── Senha lembrada no aparelho ───────────────────────── */
 function lembrada() { try { return localStorage.getItem("agenda_tv_ok") === "1"; } catch (e) { return false; } }
@@ -278,7 +289,7 @@ function desenhar() {
       destaque.innerHTML = '<div class="proximo calmo"><div class="quando">Último paciente do dia em atendimento.</div></div>';
     }
     conteudo.className = "turnos";
-    conteudo.innerHTML = turno("Manhã", manha, agora, prox) + turno("Tarde", tarde, agora, prox);
+    conteudo.innerHTML = montarTurnos(manha, tarde, agora, prox);
     caberNaTela();
     return;
   }
@@ -306,13 +317,19 @@ function desenhar() {
     '<span class="quem">Primeiro paciente às ' + partes(primeiro.start_time).hhmm + ': ' + esc(nomeBonito(primeiro.nome)) + '</span></div>';
   conteudo.className = "turnos";
   var antesDeTudo = { min: -1 };
-  conteudo.innerHTML = turno("Manhã", m2, antesDeTudo, null) + turno("Tarde", t2, antesDeTudo, null);
+  conteudo.innerHTML = montarTurnos(m2, t2, antesDeTudo, null);
   caberNaTela();
 }
 
-function turno(titulo, lista, agora, prox) {
-  var html = '<section class="turno"><h2>' + titulo + '<span>' +
-    (lista.length ? lista.length + (lista.length === 1 ? " paciente" : " pacientes") : "sem pacientes") + '</span></h2><div class="lista">';
+function montarTurnos(manha, tarde, agora, prox) {
+  if (!tarde.length) return turno("Manhã", manha, agora, prox, true);
+  if (!manha.length) return turno("Tarde", tarde, agora, prox, true);
+  return turno("Manhã", manha, agora, prox, false) + turno("Tarde", tarde, agora, prox, false);
+}
+
+function turno(titulo, lista, agora, prox, largo) {
+  var html = '<section class="turno' + (largo ? ' largo' : '') + '"><h2>' + titulo + '<span>' +
+    (lista.length ? lista.length + (lista.length === 1 ? " paciente" : " pacientes") : "sem pacientes") + '</span><em class="mais"></em></h2><div class="lista">';
   var passados = lista.filter(function (r) {
     var fim = r.end_time ? partes(r.end_time).min : partes(r.start_time).min + 5;
     return fim <= agora.min;
@@ -336,28 +353,21 @@ function turno(titulo, lista, agora, prox) {
   return html + '</div></section>';
 }
 
-/* Se a lista não couber, esconde o fim e mostra "+ N mais tarde" */
+/* Se a lista não couber, esconde o fim e mostra "+ N depois" no título do turno */
 function caberNaTela() {
   var listas = document.querySelectorAll(".lista");
   for (var i = 0; i < listas.length; i++) {
-    var lista = listas[i];
-    var linhas = lista.querySelectorAll(".linha");
-    var limite = lista.getBoundingClientRect().bottom;
-    var escondidas = 0;
-    for (var j = linhas.length - 1; j >= 0; j--) {
-      if (linhas[j].getBoundingClientRect().bottom > limite - 1 || (escondidas > 0 && linhas[j].getBoundingClientRect().bottom > limite - lista.offsetHeight * 0.08)) {
-        linhas[j].style.display = "none"; escondidas++;
-      } else break;
+    var lista = listas[i], caixa = lista.getBoundingClientRect();
+    var linhas = lista.querySelectorAll(".linha"), escondidas = 0;
+    for (var j = 0; j < linhas.length; j++) {
+      var r = linhas[j].getBoundingClientRect();
+      if (escondidas || r.bottom > caixa.bottom + 1 || r.right > caixa.right + 1) { linhas[j].style.display = "none"; escondidas++; }
     }
-    if (escondidas) {
-      var mais = document.createElement("div");
-      mais.className = "mais";
-      mais.textContent = "+ " + escondidas + (escondidas === 1 ? " paciente depois" : " pacientes depois");
-      lista.appendChild(mais);
-    }
+    var mais = lista.parentNode.querySelector(".mais");
+    if (mais) mais.textContent = escondidas ? "+ " + escondidas + " depois" : "";
   }
 }
-window.addEventListener("resize", desenhar);
+window.addEventListener("resize", function () { escala(); desenhar(); });
 
 /* ── Início ───────────────────────────────────────────── */
 if (lembrada()) entrar();
